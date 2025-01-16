@@ -1,4 +1,8 @@
-a=1416
-print(type(a))
-b="welcome to python"
-print(type(b))
+age = 25
+print(age)
+
+price = 19.99
+print(price)
+
+name = "John Doe"
+print(name)
