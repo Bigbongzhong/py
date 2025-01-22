@@ -1,5 +1,5 @@
-x="suryansh"
-y="(surya)"
-z="thapliyal"
+x="kevalya"
+y="(keval)"
+z="khandelwal"
 a=x+y+z
 print(a)

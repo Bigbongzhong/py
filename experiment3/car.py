@@ -7,7 +7,7 @@ while command != quit:
     elif command=="stop":
         print("car stopped")
     elif command=="help":
-        print("craxy shbit")
+        print("crazy shit")
     elif command=="quit":
         print("game ended")
         break
