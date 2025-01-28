@@ -1,8 +1,10 @@
 input_string = input("Enter a string: ")
 output_string = ""
+
 for char in input_string:
-    if 'a' <= char <= 'z':
-        output_string += chr(ord(char) - 32)  # convert to uppercase
+    if char >= 'a' and char <= 'z': 
+        output_string += char.upper() 
     else:
         output_string += char
+
 print("Converted string:", output_string)

@@ -5,4 +5,4 @@ for num in range(2, 101):
             is_prime = False
             break
     if is_prime:
-        print(num, end=" ")
+        print(num)
