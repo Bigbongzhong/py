@@ -1,47 +1,49 @@
-def generate_random_choice(user_input):
-    hash_value = hash(user_input)
-    random_choice = abs(hash_value) % 3
-    return random_choice
+class RPS:
+    def genrandomChoice(self, user_input):
+        hash_value = hash(user_input)
+        random_choice = abs(hash_value) % 3
+        return random_choice
 
-def determine_winner(player_choice, computer_choice):
-    if player_choice == computer_choice:
-        return "It's a tie!"
-    elif ((player_choice == 0 and computer_choice == 2) or (player_choice == 1 and computer_choice == 0) or (player_choice == 2 and computer_choice == 1)):
-        return "You win!"
-    else:
-        return "You lose!"
+    def winner(self, pChoice, cChoice):
+        if pChoice == cChoice:
+            return "It is a tie"
+        elif ((pChoice == 0 and cChoice == 2) or 
+                (pChoice == 1 and cChoice == 0) or 
+                (pChoice == 2 and cChoice == 1)):
+            return "You won the game"
+        else:
+            return "You lost the game"
 
-def choice(choice):
-    choices = ["Rock", "Paper", "Scissors"]
-    return choices[choice]
+    def user_choice(self, choice):
+        ch = ["Rock", "Paper", "Scissors"]
+        return ch[choice]
 
-def playgame():
-    print("Welcome to Rock, Paper, Scissors!")
+    def play(self):
+        print("Welcome to Rock-Paper-Scissors!")
 
-    player_choice = input("Enter your choice (Rock, Paper, Scissors): ").strip().lower()
-    if player_choice == "rock":
-        player_choice = 0
-    elif player_choice == "paper":
-        player_choice = 1
-    elif player_choice == "scissors":
-        player_choice = 2
-    else:
-        print("Invalid choice! Exiting game.")
-        return
+        while True:
+            pChoice = input("Enter your choice (Rock, Paper, Scissors): ").strip().lower()
+            if pChoice == "rock":
+                pChoice = 0
+            elif pChoice == "paper":
+                pChoice = 1
+            elif pChoice == "scissors":
+                pChoice = 2
+            else:
+                print("Invalid choice! Try again.")
+                continue  
 
-    user_input = input("Enter a string or number to generate randomness for the computer's choice: ")
-    computer_choice = generate_random_choice(user_input)
+            user_input = input("Enter a string or number to generate randomness for the computer's choice: ")
+            computer_choice = self.genrandomChoice(user_input)
 
-    print(f"You chose: {choice(player_choice)}")
-    print(f"Computer chose: {choice(computer_choice)}")
+            print(f"You chose: {self.user_choice(pChoice)}")
+            print(f"Computer chose: {self.user_choice(computer_choice)}")
 
-    result = determine_winner(player_choice, computer_choice)
-    print(result)
-    again=input("do you want to play again?\n(yes/no)\n")
-    if again == "yes":
-        playgame()
-    else:
-        return
-    
+            print(self.winner(pChoice, computer_choice))
 
-playgame()
+            again = input("Do you want to play again? (yes/no): ").strip().lower()
+            if again != "yes":
+                print("Thanks for playing!")
+                break
+
+RPS().play()
