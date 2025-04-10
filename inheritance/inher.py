@@ -28,3 +28,4 @@ class eligible(above18, below18):
 status=False
 n=int(input("enter you age:"))
 A=eligible(n, status)
+#diff type of inheritance
