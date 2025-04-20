@@ -1,168 +1,146 @@
-import pandas as pd
 import os
 
-class Book:
-    def __init__(self, id, name, writer, is_available=True, holder=""):
-        self.id = id
-        self.name = name
-        self.writer = writer
-        self.is_available = is_available
-        self.holder = holder
+class LibraryItem:
+    def __init__(self, item_id, title, author, available=True, borrowed_by=""):
+        self.item_id = item_id
+        self.title = title
+        self.author = author
+        self.available = available
+        self.borrowed_by = borrowed_by
 
     def __str__(self):
-        status = "Available ✅" if self.is_available else f"Taken by {self.holder}"
-        return f"[{self.id}] '{self.name}' by {self.writer} - {status}"
+        status = "✅ In stock" if self.available else f"⛔ Borrowed by {self.borrowed_by}"
+        return f"[{self.item_id}] \"{self.title}\" by {self.author} - {status}"
 
-class LibrarySystem:
-    def __init__(self, data_file='library_data.xlsx'):
-        self.data_file = data_file
-        self.collection = []
-        self.load_data()
+    def to_line(self):
+        return f"{self.item_id}|{self.title}|{self.author}|{int(self.available)}|{self.borrowed_by}\n"
 
-    def load_data(self):
-        if os.path.exists(self.data_file):
+    @staticmethod
+    def from_line(line):
+        parts = line.strip().split('|')
+        return LibraryItem(parts[0], parts[1], parts[2], bool(int(parts[3])), parts[4])
+
+class CatalogManager:
+    def __init__(self, storage_file='library_data.txt'):
+        self.storage_file = storage_file
+        self.inventory = []
+        self.load_items()
+
+    def load_items(self):
+        if os.path.exists(self.storage_file):
             try:
-                df = pd.read_excel(self.data_file, engine='openpyxl').fillna("")
-                expected_cols = {'BookID', 'Title', 'Author', 'Status', 'HolderID'}
-                if not expected_cols.issubset(df.columns):
-                    print("❌ File format incorrect. Starting fresh.")
-                    return
+                with open(self.storage_file, 'r') as f:
+                    for line in f:
+                        self.inventory.append(LibraryItem.from_line(line))
+            except Exception as e:
+                print(f"⚠️ Failed to load catalog: {e}")
 
-                for _, row in df.iterrows():
-                    self.collection.append(Book(
-                        str(row['BookID']),
-                        row['Title'],
-                        row['Author'],
-                        bool(row['Status']),
-                        str(row['HolderID'])
-                    ))
-            except Exception as error:
-                print(f"⚠️ Couldn't load data: {error}")
-
-    def save_data(self):
-        records = {
-            'BookID': [book.id for book in self.collection],
-            'Title': [book.name for book in self.collection],
-            'Author': [book.writer for book in self.collection],
-            'Status': [book.is_available for book in self.collection],
-            'HolderID': [book.holder for book in self.collection]
-        }
-        df = pd.DataFrame(records)
+    def save_items(self):
         try:
-            df.to_excel(self.data_file, index=False, engine='openpyxl')
-        except Exception as error:
-            print(f"⚠️ Couldn't save data: {error}")
+            with open(self.storage_file, 'w') as f:
+                for item in self.inventory:
+                    f.write(item.to_line())
+        except Exception as e:
+            print(f"⚠️ Could not update storage: {e}")
 
-    def add_new_book(self, book):
-        self.collection.append(book)
-        self.save_data()
-        print("📚 Book has been added to the collection!")
+    def add_item(self, item):
+        self.inventory.append(item)
+        self.save_items()
+        print("📗 New item added to the catalog.")
 
-    def list_all_books(self):
-        if not self.collection:
-            print("📭 No books found.")
+    def display_all(self):
+        if not self.inventory:
+            print("📭 Catalog is currently empty.")
             return
-        for book in self.collection:
-            print(book)
+        for item in self.inventory:
+            print(item)
 
-    def issue_book(self, book_id, sap_id):
-        for book in self.collection:
-            if book.id == book_id:
-                if book.is_available:
-                    book.is_available = False
-                    book.holder = sap_id
-                    self.save_data()
-                    print(f"✅ Book issued to SAP ID: {sap_id}")
+    def lend_item(self, item_id, user_id):
+        for item in self.inventory:
+            if item.item_id == item_id:
+                if item.available:
+                    item.available = False
+                    item.borrowed_by = user_id
+                    self.save_items()
+                    print(f"📤 Issued to: {user_id}")
                 else:
-                    print("⛔ Book is already checked out.")
+                    print(f"⛔ Already borrowed by {item.borrowed_by}")
                 return
-        print("❌ Book ID not found.")
+        print("❌ Item not found.")
 
-    def return_book(self, book_id):
-        for book in self.collection:
-            if book.id == book_id:
-                if not book.is_available:
-                    book.is_available = True
-                    book.holder = ""
-                    self.save_data()
-                    print("✅ Book returned successfully.")
+    def return_item(self, item_id):
+        for item in self.inventory:
+            if item.item_id == item_id:
+                if not item.available:
+                    item.available = True
+                    item.borrowed_by = ""
+                    self.save_items()
+                    print("📥 Item successfully returned.")
                 else:
-                    print("ℹ️ This book wasn't borrowed.")
+                    print("ℹ️ Item was not on loan.")
                 return
-        print("❌ Book ID not found.")
+        print("❌ Invalid item ID.")
 
-    def borrowed_books(self):
-        found = False
-        for book in self.collection:
-            if not book.is_available:
-                print(f"{book} [Holder: {book.holder}]")
-                found = True
-        if not found:
-            print("📦 All books are currently available.")
-            
-    def delete_book(self, book_id):
-        for i, book in enumerate(self.collection):
-            if book.id == book_id:
-                confirm = input(f"⚠️ Are you sure you want to delete '{book.name}'? (yes/no): ").lower()
-                if confirm == 'yes':
-                    del self.collection[i]
-                    self.save_data()
-                    print("🗑️ Book successfully deleted.")
+    def list_borrowed(self):
+        borrowed = [item for item in self.inventory if not item.available]
+        if not borrowed:
+            print("📦 All items are currently available.")
+        else:
+            for item in borrowed:
+                print(f"{item} [Borrower ID: {item.borrowed_by}]")
+
+    def remove_item(self, item_id):
+        for i, item in enumerate(self.inventory):
+            if item.item_id == item_id:
+                confirm = input(f"⚠️ Delete '{item.title}'? Type 'confirm': ").lower()
+                if confirm == 'confirm':
+                    del self.inventory[i]
+                    self.save_items()
+                    print("🗑️ Item removed.")
                 else:
-                    print("❎ Deletion cancelled.")
+                    print("🚫 Deletion aborted.")
                 return
-        print("❌ Book ID not found.")
+        print("❌ No item matches that ID.")
 
+def launch_menu():
+    catalog = CatalogManager()
 
-def run():
-    system = LibrarySystem("library_data.xlsx")
-
-
-    print("📘 Welcome to the Smart Library Management System")
+    print("📘 Welcome to the Simple Library Catalog System")
     while True:
-        print("\n🛠️ OPTIONS MENU")
-        print("1. ➕ Add Book")
-        print("2. 📚 Show All Books")
-        print("3. 📤 Issue Book")
-        print("4. 📥 Return Book")
-        print("5. 🔎 Show Borrowed Books")
-        print("6. 🗑️ Delete a Book")
+        print("\n🔧 MENU OPTIONS")
+        print("1. ➕ Add Item")
+        print("2. 📚 View Catalog")
+        print("3. 📤 Lend Item")
+        print("4. 📥 Return Item")
+        print("5. 🔍 View Borrowed Items")
+        print("6. 🗑️ Remove Item")
         print("7. ❎ Exit")
-        task = input("👉 Choose (1-6): ")
+        action = input("👉 Select (1–7): ")
 
-        if task == '1':
-            bid = input("🔢 Book ID: ")
-            
+        if action == '1':
+            item_id = input("🆔 Item ID: ")
             title = input("📖 Title: ")
-            
             author = input("✍️ Author: ")
-            
-            system.add_new_book(Book(bid, title, author))
-        elif task == '2':
-            
-            system.list_all_books()
-        elif task == '3':
-            
-            bid = input("📤 Enter Book ID to issue: ")
-            sid = input("🪪 Enter your SAP ID: ")
-            system.issue_book(bid, sid)
-        elif task == '4':
-            
-            bid = input("📥 Enter Book ID to return: ")
-            system.return_book(bid)
-        elif task == '5':
-            
-            system.borrowed_books()
-        elif task == '6':
-            bid = input("🔎 Enter Book ID to delete: ")
-            system.delete_book(bid)
-        elif task == '7':
-            
-            print("👋 Exiting system. Catch you later!")
+            catalog.add_item(LibraryItem(item_id, title, author))
+        elif action == '2':
+            catalog.display_all()
+        elif action == '3':
+            item_id = input("📤 Enter Item ID to lend: ")
+            user_id = input("🪪 Your User ID: ")
+            catalog.lend_item(item_id, user_id)
+        elif action == '4':
+            item_id = input("📥 Enter Item ID to return: ")
+            catalog.return_item(item_id)
+        elif action == '5':
+            catalog.list_borrowed()
+        elif action == '6':
+            item_id = input("🗑️ Enter Item ID to remove: ")
+            catalog.remove_item(item_id)
+        elif action == '7':
+            print("👋 Goodbye!")
             break
         else:
-            print("⚠️ Invalid input. Please try again.")
+            print("⚠️ Invalid selection. Try again.")
 
 if __name__ == "__main__":
-    
-    run()
+    launch_menu()
