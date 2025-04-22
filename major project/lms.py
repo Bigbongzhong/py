@@ -15,10 +15,10 @@ class LibraryItem:
     def to_line(self):
         return f"{self.item_id}|{self.title}|{self.author}|{int(self.available)}|{self.borrowed_by}\n"
 
-    @staticmethod
     def from_line(line):
         parts = line.strip().split('|')
         return LibraryItem(parts[0], parts[1], parts[2], bool(int(parts[3])), parts[4])
+
 
 class CatalogManager:
     def __init__(self, storage_file='library_data.txt'):
@@ -29,21 +29,26 @@ class CatalogManager:
     def load_items(self):
         if os.path.exists(self.storage_file):
             try:
-                with open(self.storage_file, 'r') as f:
-                    for line in f:
-                        self.inventory.append(LibraryItem.from_line(line))
+                f = open(self.storage_file, 'r')
+                for line in f:
+                    self.inventory.append(LibraryItem.from_line(line))
+                f.close()
             except Exception as e:
                 print(f"⚠️ Failed to load catalog: {e}")
 
     def save_items(self):
         try:
-            with open(self.storage_file, 'w') as f:
-                for item in self.inventory:
-                    f.write(item.to_line())
+            f = open(self.storage_file, 'w')
+            for item in self.inventory:
+                f.write(item.to_line())
+            f.close()
         except Exception as e:
             print(f"⚠️ Could not update storage: {e}")
 
     def add_item(self, item):
+        if any(existing.item_id == item.item_id for existing in self.inventory):
+            print("⚠️ Item ID already exists. Choose a unique ID.")
+            return
         self.inventory.append(item)
         self.save_items()
         print("📗 New item added to the catalog.")
@@ -102,6 +107,7 @@ class CatalogManager:
                 return
         print("❌ No item matches that ID.")
 
+
 def launch_menu():
     catalog = CatalogManager()
 
@@ -137,10 +143,12 @@ def launch_menu():
             item_id = input("🗑️ Enter Item ID to remove: ")
             catalog.remove_item(item_id)
         elif action == '7':
+            catalog.save_items()
             print("👋 Goodbye!")
             break
         else:
             print("⚠️ Invalid selection. Try again.")
+
 
 if __name__ == "__main__":
     launch_menu()
